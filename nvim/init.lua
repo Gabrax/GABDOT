@@ -21,7 +21,13 @@ vim.opt.rtp:prepend(lazypath)
 
 local plugins =
 {
-  { 'projekt0n/github-nvim-theme', name = 'github_dark' },
+  {
+    "Mofiqul/vscode.nvim",
+    priority = 1000,
+    config = function()
+      vim.cmd.colorscheme("vscode")
+    end
+  },
   {
     'nvim-telescope/telescope.nvim', version = '*',
     dependencies = {
@@ -53,18 +59,55 @@ local plugins =
   {
     "mason-org/mason-lspconfig.nvim",
     opts = {
-      ensure_installed = { "lua_ls" },
+      ensure_installed = { "lua_ls", "clangd" },
     },
     dependencies = {
       { "mason-org/mason.nvim", opts = {} },
       "neovim/nvim-lspconfig",
     },
+  },
+  {
+    'goolord/alpha-nvim',
   }
 }
 
 require("lazy").setup(plugins)
 require('lualine').setup()
 
+local alpha = require("alpha")
+local dashboard = require("alpha.themes.dashboard")
+
+dashboard.section.header.val = {
+"  ▄████  ▄▄▄       ▄▄▄▄   ",
+" ██▒ ▀█▒▒████▄    ▓█████▄ ",
+"▒██░▄▄▄░▒██  ▀█▄  ▒██▒ ▄██",
+"░▓█  ██▓░██▄▄▄▄██ ▒██░█▀  ",
+"░▒▓███▀▒ ▓█   ▓██▒░▓█  ▀█▓",
+" ░▒   ▒  ▒▒   ▓▒█░░▒▓███▀▒",
+"  ░   ░   ▒   ▒▒ ░▒░▒   ░ ",
+"░ ░   ░   ░   ▒    ░    ░ ",
+"      ░       ░  ░ ░      ",
+"                       ░  "
+}
+
+dashboard.section.buttons.val = {}
+
+local screen_height = vim.fn.winheight(0)
+local header_height = #dashboard.section.header.val
+dashboard.config.layout = {
+    { type = "padding", val = math.floor((screen_height - header_height) / 2) },
+    dashboard.section.header,
+}
+
+alpha.setup(dashboard.config)
+
+vim.api.nvim_create_autocmd("VimEnter", {
+  callback = function()
+    if vim.fn.argc() == 0 then
+      require("alpha").start(true)
+    end
+  end
+})
 
 vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, { desc = "Show diagnostics" })
 vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnostic" })
@@ -72,6 +115,10 @@ vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" }
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostics to loclist" })
 vim.keymap.set('n', 'K', vim.lsp.buf.hover, {})
 vim.keymap.set('n', '<leader>n', ':Neotree filesystem reveal left<CR>',{})
+
+vim.keymap.set("n", "<leader>rn", ":lua vim.lsp.buf.rename()<CR>", { desc = "Rename symbol with LSP" })
+vim.keymap.set("n", "<leader>dn", ":lua vim.diagnostic.goto_next()<CR>", { desc = "Go to next diagnostic" })
+vim.keymap.set("n", "<leader>dp", ":lua vim.diagnostic.goto_prev()<CR>", { desc = "Go to previous diagnostic" })
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Telescope find files' })
@@ -89,8 +136,6 @@ require("nvim-treesitter").setup({
   },
   highlight = { enable = true },
 })
-
-vim.cmd.colorscheme("github_dark")
 
 local function transparent()
   vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
