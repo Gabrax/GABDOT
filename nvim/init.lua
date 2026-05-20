@@ -13,7 +13,7 @@ if not vim.loop.fs_stat(lazypath) then
     "clone",
     "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
+    "--branch=stable", 
     lazypath,
   })
 end
@@ -32,14 +32,28 @@ local plugins =
     'nvim-telescope/telescope.nvim', version = '*',
     dependencies = {
         'nvim-lua/plenary.nvim',
-        -- optional but recommended
         { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
     }
   },
   {
     'nvim-treesitter/nvim-treesitter',
-    lazy = false,
-    build = ':TSUpdate'
+    build = ':TSUpdate',
+    config = function()
+      require("nvim-treesitter").setup({
+        ensure_installed = {
+          "lua",
+          "cmake",
+          "javascript",
+          "c",
+          "cpp",
+          "python"
+        },
+        highlight = {
+          enable = true,
+          additional_vim_regex_highlighting = false,
+        },
+      })
+    end
   },
   {
     "nvim-neo-tree/neo-tree.nvim",
@@ -47,9 +61,9 @@ local plugins =
     dependencies = {
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
-      "nvim-tree/nvim-web-devicons", -- optional, but recommended
+      "nvim-tree/nvim-web-devicons", 
     },
-    lazy = false, -- neo-tree will lazily load itself
+    lazy = false, 
   },
   {
     'nvim-lualine/lualine.nvim',
@@ -126,7 +140,7 @@ vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnosti
 vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Diagnostics to loclist" })
 vim.keymap.set('n', 'K', vim.lsp.buf.hover, {})
-vim.keymap.set('n', '<leader>n', ':Neotree filesystem reveal left<CR>',{})
+vim.keymap.set('n', '<leader>n', ':Neotree toggle<CR>',{})
 
 vim.keymap.set("n", "<leader>rn", ":lua vim.lsp.buf.rename()<CR>", { desc = "Rename symbol with LSP" })
 vim.keymap.set("n", "<leader>dn", ":lua vim.diagnostic.goto_next()<CR>", { desc = "Go to next diagnostic" })
@@ -138,17 +152,13 @@ vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live gr
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 
-require("nvim-treesitter").setup({
-  ensure_installed = {
-    "lua",
-    "cmake",
-    "javascript",
-    "c",
-    "cpp",
-  },
-  highlight = { enable = true },
-})
+vim.keymap.set("n", "<Tab>", ":bn<CR>")
+vim.keymap.set("n", "<S-Tab>", ":bp<CR>")
 
+vim.keymap.set("n", "<C-h>", "<C-w>h")
+vim.keymap.set("n", "<C-l>", "<C-w>l")
+vim.keymap.set("n", "<C-j>", "<C-w>j")
+vim.keymap.set("n", "<C-k>", "<C-w>k")
 
 local cmp = require('cmp')
 local luasnip = require('luasnip')
@@ -193,6 +203,17 @@ cmp.setup({
       maxwidth = 50,
     })
   }
+})
+
+vim.o.clipboard = "unnamedplus"
+vim.api.nvim_create_autocmd("TextYankPost", {
+  callback = function()
+    -- vim.highlight.on_yank()
+    local copy_to_unnamedplus = require("vim.ui.clipboard.osc52").copy("+")
+    copy_to_unnamedplus(vim.v.event.regcontents)
+    local copy_to_unnamed = require("vim.ui.clipboard.osc52").copy("*")
+    copy_to_unnamed(vim.v.event.regcontents)
+  end,
 })
 
 local function transparent()
